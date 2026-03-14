@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -92,25 +93,43 @@
       <div style="display:grid;grid-template-columns:1.1fr .9fr;gap:16px">
         <div class="card">
           <h2>Request Service or an Estimate</h2>
-          <label>Name</label><input id="name">
-          <label>Phone</label><input id="phone">
-          <label>Address</label><input id="address">
-          <label>City</label>
-          <select id="city"><option>Duncan</option><option>Marlow</option><option>Comanche</option></select>
-          <label>Service Needed</label>
-          <select id="service"><option>Lawn Mowing</option><option>Leaf Removal</option><option>Bush Trimming</option><option>Flower Beds</option><option>Yard Cleanup</option><option>Estimate Only</option></select>
-          <label>Preferred Date</label><input id="reqdate" type="date">
-          <label>Notes</label><textarea id="notes" placeholder="Gate code, yard size, special requests"></textarea>
-          <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap">
-            <button class="btn" onclick="buildRequest()">Build Request</button>
-            <button class="btn secondary" onclick="copyRequest()">Copy</button>
-            <a class="btn secondary" id="smsLink" href="#">Text to Pat</a>
-          </div>
+          <!-- Web3Forms: replace fa57bda7-4944-4f38-8f2a-cc54a82359d4 with your key from web3forms.com -->
+          <form id="contactForm" onsubmit="submitForm(event)">
+            <input type="hidden" name="access_key" value="fa57bda7-4944-4f38-8f2a-cc54a82359d4">
+            <input type="hidden" name="subject" value="New Service Request - Pat's Yard Care">
+            <input type="hidden" name="from_name" value="Pat's Yard Care Website">
+            <label>Name</label><input name="name" id="fname" required>
+            <label>Phone</label><input name="phone" id="fphone" required>
+            <label>Address</label><input name="address" id="faddress" required>
+            <label>City</label>
+            <select name="city" id="fcity"><option>Duncan</option><option>Marlow</option><option>Comanche</option></select>
+            <label>Service Needed</label>
+            <select name="service" id="fservice"><option>Lawn Mowing</option><option>Leaf Removal</option><option>Bush Trimming</option><option>Flower Beds</option><option>Yard Cleanup</option><option>Estimate Only</option></select>
+            <label>Preferred Date</label><input name="preferred_date" id="freqdate" type="date">
+            <label>Notes</label><textarea name="notes" id="fnotes" placeholder="Gate code, yard size, special requests"></textarea>
+            <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+              <button type="submit" class="btn" id="submitBtn">Send Request</button>
+              <a class="btn secondary" id="smsLink" href="#" onclick="buildSmsLink()">Text to Pat</a>
+            </div>
+            <div id="formMsg" style="margin-top:12px;display:none;padding:12px;border-radius:10px"></div>
+          </form>
         </div>
         <div class="card">
-          <h2>Request Preview</h2>
-          <textarea id="preview" style="min-height:320px"></textarea>
-          <p class="small" style="margin-top:12px">Fill out the form and click "Build Request" to generate a message you can copy or text directly to Pat. No account needed.</p>
+          <h2>How It Works</h2>
+          <ul style="padding-left:18px;line-height:2;color:var(--muted)">
+            <li>Fill out the form with your info</li>
+            <li>Click <strong style="color:var(--text)">Send Request</strong> — it goes straight to Pat's email</li>
+            <li>Or tap <strong style="color:var(--text)">Text to Pat</strong> to send via SMS instead</li>
+            <li>Pat will call or text you back to confirm</li>
+          </ul>
+          <div style="margin-top:16px;padding:14px;background:#1a2a1d;border:1px solid #1d6d37;border-radius:12px">
+            <div style="font-weight:700;margin-bottom:6px">Payments accepted</div>
+            <div class="small">Cash App: <strong>$bmxpat</strong><br>Cash &bull; Check</div>
+          </div>
+          <div style="margin-top:12px" class="small">
+            Or call/text directly:<br>
+            <a href="tel:5804751561" style="color:#8bd8a2;font-size:1.1rem;font-weight:700">(580) 475-1561</a>
+          </div>
         </div>
       </div>
     </div>
@@ -123,12 +142,42 @@
   </footer>
 
 <script>
-function buildRequest(){
-  const text="Pat's Yard Care Request\n\nName: "+name.value+"\nPhone: "+phone.value+"\nAddress: "+address.value+"\nCity: "+city.value+"\nService: "+service.value+"\nDate: "+reqdate.value+"\nNotes: "+notes.value;
-  preview.value=text;
-  smsLink.href="sms:5804751561?body="+encodeURIComponent(text);
+async function submitForm(e) {
+  e.preventDefault();
+  const btn = document.getElementById("submitBtn");
+  const msg = document.getElementById("formMsg");
+  btn.disabled = true;
+  btn.textContent = "Sending...";
+
+  const data = new FormData(e.target);
+  const res = await fetch("https://api.web3forms.com/submit", {
+    method: "POST",
+    body: data
+  });
+  const json = await res.json();
+
+  msg.style.display = "block";
+  if (json.success) {
+    msg.style.background = "#10331b";
+    msg.style.border = "1px solid #1d6d37";
+    msg.style.color = "#7ecf98";
+    msg.textContent = "Request sent! Pat will be in touch soon.";
+    e.target.reset();
+    btn.textContent = "Send Request";
+    btn.disabled = false;
+  } else {
+    msg.style.background = "#2a1010";
+    msg.style.border = "1px solid #6d1d1d";
+    msg.style.color = "#cf7e7e";
+    msg.textContent = "Something went wrong. Please call or text Pat directly at (580) 475-1561.";
+    btn.textContent = "Send Request";
+    btn.disabled = false;
+  }
 }
-function copyRequest(){if(!preview.value)return alert("Build the request first.");preview.select();document.execCommand("copy");alert("Copied to clipboard.");}
+function buildSmsLink() {
+  const text = "Pat's Yard Care Request\n\nName: " + (fname.value||"") + "\nPhone: " + (fphone.value||"") + "\nAddress: " + (faddress.value||"") + "\nCity: " + fcity.value + "\nService: " + fservice.value + "\nDate: " + (freqdate.value||"") + "\nNotes: " + (fnotes.value||"");
+  document.getElementById("smsLink").href = "sms:5804751561?body=" + encodeURIComponent(text);
+}
 </script>
 </body>
 </html>
