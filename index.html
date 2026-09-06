@@ -1070,6 +1070,29 @@
     btn.disabled = false;
     btn.textContent = 'Send My Request →';
   });
+
+  // Also send quote requests into the Pat's Yard Care app (Financials → Quotes).
+  // This runs alongside the Web3Forms handler above, not instead of it — the
+  // email keeps working exactly as it always has, even if this part fails.
+  document.getElementById('contactForm').addEventListener('submit', async function (e) {
+    const data = new FormData(this);
+    try {
+      await fetch('https://patsyardcare.floot.app/_api/quote_request', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          json: {
+            name: data.get('name') || '',
+            phone: data.get('phone') || '',
+            email: data.get('email') || '',
+            details: data.get('message') || '(no message provided)',
+          },
+        }),
+      });
+    } catch (appSyncErr) {
+      console.error('Could not sync quote request to the app:', appSyncErr);
+    }
+  });
 </script>
 
 <a href="tel:+15804751561" class="float-call-btn" aria-label="Call Pat's Yard Care">
