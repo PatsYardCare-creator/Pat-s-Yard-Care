@@ -1074,21 +1074,23 @@
   // Also send quote requests into the Pat's Yard Care app (Financials → Quotes).
   // This runs alongside the Web3Forms handler above, not instead of it — the
   // email keeps working exactly as it always has, even if this part fails.
-  document.getElementById('contactForm').addEventListener('submit', async function (e) {
+  // Uses sendBeacon (not fetch) because it's a one-way, fire-and-forget call
+  // that doesn't trigger a cross-site security preflight the way fetch does.
+  document.getElementById('contactForm').addEventListener('submit', function (e) {
     const data = new FormData(this);
     try {
-      await fetch('https://patsyardcare.floot.app/_api/quote_request', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          json: {
-            name: data.get('name') || '',
-            phone: data.get('phone') || '',
-            email: data.get('email') || '',
-            details: data.get('message') || '(no message provided)',
-          },
-        }),
+      const payload = JSON.stringify({
+        json: {
+          name: data.get('name') || '',
+          phone: data.get('phone') || '',
+          email: data.get('email') || '',
+          details: data.get('message') || '(no message provided)',
+        },
       });
+      navigator.sendBeacon(
+        'https://patsyardcare.floot.app/_api/quote_request',
+        new Blob([payload], { type: 'text/plain' })
+      );
     } catch (appSyncErr) {
       console.error('Could not sync quote request to the app:', appSyncErr);
     }
